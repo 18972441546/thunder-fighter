@@ -28,6 +28,8 @@ jobs:
         restore-keys: |
           pip-${{ runner.os }}-
 
+    # 缓存 buildozer 的 SDK / NDK / python-for-android 编译产物，
+    # 避免每次重试都全量下载和编译（此前每次约 20 分钟）。
     - name: Cache buildozer (SDK/NDK/p4a artifacts)
       uses: actions/cache@v4
       with:
@@ -49,10 +51,21 @@ jobs:
         python -m pip install --upgrade pip
         pip install buildozer
 
+    - name: Display buildozer version
+      run: |
+        buildozer --version
+
+    # Gradle 8 + Android Gradle Plugin 需要 Java 17；
+    # runner 默认 JAVA_HOME 是 Java 11，这里强制切到 JDK 17，否则 gradlew 静默失败。
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
     - name: Build with buildozer
       run: |
-        set -o pipefail
-        buildozer android debug 2>&1 | tail -n 300
+        buildozer android debug
       continue-on-error: false
 
     - name: Upload APK
