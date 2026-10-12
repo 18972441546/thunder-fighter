@@ -13,6 +13,7 @@ from kivy.properties import NumericProperty, ReferenceListProperty, ObjectProper
 from kivy.vector import Vector
 from kivy.config import Config
 from kivy.utils import platform
+from kivy.core.window import Window
 import random
 from functools import partial
 
@@ -28,6 +29,21 @@ else:
 WIDTH = 480
 HEIGHT = 600
 FPS = 60
+
+def _sync_size(*args):
+    """让逻辑画布跟随实际窗口尺寸。
+
+    安卓是全屏窗口（如 1080x2400），若继续用硬编码 480x600，
+    根布局只占窗口一角、其余为黑色背景，导致启动黑屏。
+    这里把 WIDTH/HEIGHT 同步成当前窗口尺寸，使所有游戏坐标自动适配全屏。
+    """
+    global WIDTH, HEIGHT
+    w, h = Window.size
+    if w and h:  # 忽略尚未初始化时的 (0, 0)
+        WIDTH, HEIGHT = w, h
+
+Window.bind(size=_sync_size)
+_sync_size()
 
 
 class Player(Widget):
@@ -148,7 +164,8 @@ class GameWidget(FloatLayout):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.size = (WIDTH, HEIGHT)
+        # 让逻辑画布跟随当前窗口尺寸，根布局填满整个窗口（安卓全屏不再黑屏）
+        _sync_size()
         
         # 创建玩家
         self.player = Player()
