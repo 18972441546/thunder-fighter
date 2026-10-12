@@ -51,7 +51,8 @@ jobs:
 
     - name: Build with buildozer
       run: |
-        buildozer android debug
+        set -o pipefail
+        buildozer android debug 2>&1 | tail -n 300
       continue-on-error: false
 
     - name: Upload APK
